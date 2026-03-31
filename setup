@@ -40,6 +40,19 @@ if [ ! -d "$TARGET" ]; then
   echo "Linked: $TARGET -> $INSTALL_DIR/$SKILL_NAME"
 fi
 
+# ─── Register upgrade skill via symlink ───────────────────────
+UPGRADE_NAME="gstack-to-gsd-upgrade"
+UPGRADE_TARGET="$TARGET_SKILLS_DIR/$UPGRADE_NAME"
+
+if [ -L "$UPGRADE_TARGET" ]; then
+  rm "$UPGRADE_TARGET"
+fi
+
+if [ -d "$INSTALL_DIR/$UPGRADE_NAME" ] && [ ! -d "$UPGRADE_TARGET" ]; then
+  ln -sf "$INSTALL_DIR/$UPGRADE_NAME" "$UPGRADE_TARGET"
+  echo "Linked: $UPGRADE_TARGET -> $INSTALL_DIR/$UPGRADE_NAME"
+fi
+
 # ─── Verify ──────────────────────────────────────────────────
 if [ -f "$TARGET/SKILL.md" ]; then
   echo ""

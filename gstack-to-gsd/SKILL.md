@@ -8,6 +8,23 @@ user-invocable: true
 
 Pure artifact translation. Reads gstack review outputs, writes GSD-format planning inputs. Does not execute any gstack or GSD commands.
 
+## Preamble (run first)
+
+```bash
+# Update check
+_UPD=""
+_CHECK=$(find ~/.claude/skills -path "*/gstack-to-gsd*/bin/update-check" -type f 2>/dev/null | head -1)
+[ -z "$_CHECK" ] && _CHECK=$(find .claude/skills -path "*/gstack-to-gsd*/bin/update-check" -type f 2>/dev/null | head -1)
+[ -n "$_CHECK" ] && _UPD=$(bash "$_CHECK" 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
+# Check if updates disabled
+_UPDATE_ENABLED=$(cat ~/.gstack-to-gsd/update-check-enabled 2>/dev/null || echo "true")
+echo "UPDATE_CHECK: $_UPDATE_ENABLED"
+```
+
+If output contains `UPGRADE_AVAILABLE <old> <new>` AND `UPDATE_CHECK` is not `false`:
+Read `~/.claude/skills/gstack-to-gsd-repo/gstack-to-gsd-upgrade/SKILL.md` (or find it via the same pattern as above) and follow the "Inline upgrade flow" instructions. Then continue with the command below.
+
 ## Data Flow
 
 ```

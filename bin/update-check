@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Check if a newer version of gstack-to-gsd is available on GitHub.
+# Output: "UPGRADE_AVAILABLE <local> <remote>" or nothing (up to date).
+set -e
+
+REPO="ivawzh/gstack-to-gsd"
+CACHE_DIR="$HOME/.gstack-to-gsd"
+CACHE_FILE="$CACHE_DIR/last-update-check"
+SNOOZE_FILE="$CACHE_DIR/update-snoozed"
+
+mkdir -p "$CACHE_DIR"
+
+# Find install dir (where this script lives)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+INSTALL_DIR="$(dirname "$SCRIPT_DIR")"
+LOCAL_VERSION=$(cat "$INSTALL_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "0.0.0")
+
+# Skip if snoozed
+if [ -f "$SNOOZE_FILE" ]; then
+  SNOOZED_VER=$(awk '{print $1}' "$SNOOZE_FILE")
+  SNOOZE_LEVEL=$(awk '{print $2}' "$SNOOZE_FILE")
+  SNOOZE_TS=$(awk '{print $3}' "$SNOOZE_FILE")
+  NOW=$(date +%s)
+  case "$SNOOZE_LEVEL" in
+    1) WAIT=86400 ;;   # 24h
+    2) WAIT=172800 ;;  # 48h
+    *) WAIT=604800 ;;  # 1 week
+  esac
+  ELAPSED=$((NOW - SNOOZE_TS))
+  if [ "$ELAPSED" -lt "$WAIT" ]; then
+    exit 0
+  fi
+fi
+
+# Cache: check at most once per 4 hours (unless --force)
+if [ "$1" != "--force" ] && [ -f "$CACHE_FILE" ]; then
+  CACHE_AGE=$(( $(date +%s) - $(stat -c %Y "$CACHE_FILE" 2>/dev/null || stat -f %m "$CACHE_FILE" 2>/dev/null || echo 0) ))
+  if [ "$CACHE_AGE" -lt 14400 ]; then
+    cat "$CACHE_FILE"
+    exit 0
+  fi
+fi
+
+# Fetch remote VERSION from GitHub (raw content, no API rate limit concerns)
+REMOTE_VERSION=$(curl -fsSL "https://raw.githubusercontent.com/$REPO/main/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "")
+
+if [ -z "$REMOTE_VERSION" ]; then
+  # Network error, skip silently
+  echo "" > "$CACHE_FILE"
+  exit 0
+fi
+
+if [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
+  echo "UPGRADE_AVAILABLE $LOCAL_VERSION $REMOTE_VERSION" > "$CACHE_FILE"
+  cat "$CACHE_FILE"
+else
+  echo "" > "$CACHE_FILE"
+fi
