@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# gstack-to-gsd setup — register the bridge skill with Claude Code
+set -e
+
+INSTALL_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILL_NAME="gstack-to-gsd"
+
+# ─── Parse flags ──────────────────────────────────────────────
+LOCAL_INSTALL=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --local) LOCAL_INSTALL=1; shift ;;
+    *) shift ;;
+  esac
+done
+
+# ─── Determine target skills directory ────────────────────────
+if [ "$LOCAL_INSTALL" -eq 1 ]; then
+  TARGET_SKILLS_DIR="$(pwd)/.claude/skills"
+else
+  TARGET_SKILLS_DIR="$HOME/.claude/skills"
+fi
+
+mkdir -p "$TARGET_SKILLS_DIR"
+
+# ─── Register skill via symlink ───────────────────────────────
+TARGET="$TARGET_SKILLS_DIR/$SKILL_NAME"
+
+if [ -L "$TARGET" ]; then
+  rm "$TARGET"
+  echo "Replaced existing symlink: $TARGET"
+elif [ -d "$TARGET" ]; then
+  echo "Directory already exists at $TARGET — skipping symlink."
+  echo "Remove it first if you want to re-link: rm -rf $TARGET"
+  exit 1
+fi
+
+if [ ! -d "$TARGET" ]; then
+  ln -sf "$INSTALL_DIR/$SKILL_NAME" "$TARGET"
+  echo "Linked: $TARGET -> $INSTALL_DIR/$SKILL_NAME"
+fi
+
+# ─── Verify ──────────────────────────────────────────────────
+if [ -f "$TARGET/SKILL.md" ]; then
+  echo ""
+  echo "Setup complete. /gstack-to-gsd is now available in Claude Code."
+  echo ""
+  echo "Commands:"
+  echo "  /gstack-to-gsd roadmap    — CEO plan -> GSD ROADMAP.md phases"
+  echo "  /gstack-to-gsd phase N    — eng/design reviews -> RESEARCH.md + CONTEXT.md"
+  echo "  /gstack-to-gsd status     — unified state across both systems"
+  echo ""
+  echo "Add the workflow guide to your project:"
+  echo "  Copy the contents of WORKFLOW.md into your project's CLAUDE.md or AGENTS.md"
+else
+  echo "Error: SKILL.md not found at $TARGET/SKILL.md" >&2
+  exit 1
+fi
