@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-03-31)
+
+- `/gstack-to-gsd phase N` now auto-triggers `/gsd:plan-phase N` after bridging
+- One command goes from gstack reviews to executable GSD plans
+- Use `--no-plan` flag to bridge only without triggering planning
+- Updated WORKFLOW.md decision tree (merged bridge+plan step)
+
 ## 0.1.0 (2026-03-31)
 
 Initial release.

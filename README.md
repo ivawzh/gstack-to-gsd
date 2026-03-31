@@ -6,25 +6,29 @@ Bridge [gstack](https://github.com/garrytan/gstack) review artifacts into [GSD](
 
 ## What it does
 
-Three commands. Pure artifact translation. No wrapping, no orchestration.
+Three commands. Translates gstack artifacts into GSD format and auto-triggers planning.
 
-| Command | Input | Output |
-|---------|-------|--------|
-| `/gstack-to-gsd roadmap` | gstack CEO plan | GSD ROADMAP.md phases + REQUIREMENTS.md |
-| `/gstack-to-gsd phase N` | gstack eng + design reviews | Phase RESEARCH.md + CONTEXT.md |
-| `/gstack-to-gsd status` | Both systems' state | Terminal advice: what to run next |
+| Command | What it does |
+|---------|-------------|
+| `/gstack-to-gsd roadmap` | CEO plan -> ROADMAP.md phases + REQUIREMENTS.md |
+| `/gstack-to-gsd phase N` | Eng+design reviews -> RESEARCH.md, then auto-triggers `/gsd:plan-phase N` |
+| `/gstack-to-gsd status` | Shows unified state across both systems, recommends next action |
+
+`/gstack-to-gsd phase N` is the main command. One invocation bridges gstack artifacts AND creates GSD execution plans. Use `--no-plan` to bridge only without triggering planning.
 
 ## The workflow
 
 ```
-gstack (strategy)          bridge              GSD (execution)
-─────────────────          ──────              ───────────────
+gstack (strategy)          bridge                    GSD (execution)
+─────────────────          ──────                    ───────────────
 /plan-ceo-review    ->  /gstack-to-gsd roadmap  ->  phases in ROADMAP.md
-/plan-eng-review    ->  /gstack-to-gsd phase N  ->  RESEARCH.md per phase
-/plan-design-review ->  /gstack-to-gsd phase N  ->  CONTEXT.md (UI phases)
-                                                     /gsd:plan-phase N
-                                                     /gsd:execute-phase N
-/qa, /review, /ship                                  (after verification)
+/plan-eng-review    ─┐
+/plan-design-review  ├─ /gstack-to-gsd phase N  ->  RESEARCH.md + CONTEXT.md
+                     │                               then auto-triggers:
+                     │                               /gsd:plan-phase N -> PLAN.md
+                     │
+                     └─────────────────────────────  /gsd:execute-phase N
+                                                     /qa, /review, /ship
 ```
 
 ## Prerequisites
@@ -50,6 +54,14 @@ cp -Rf /tmp/gstack-to-gsd/gstack-to-gsd .claude/skills/gstack-to-gsd
 rm -rf /tmp/gstack-to-gsd
 ```
 
+### Update
+
+Run `/gstack-to-gsd-upgrade` in Claude Code, or manually:
+
+```bash
+cd ~/.claude/skills/gstack-to-gsd-repo && git pull && ./setup
+```
+
 ### Add workflow guide to your project
 
 Copy the contents of [WORKFLOW.md](WORKFLOW.md) into your project's `CLAUDE.md` or `AGENTS.md`. This teaches every Claude Code session the full lifecycle and enables the "what should I do next?" routing.
@@ -62,14 +74,22 @@ Copy the contents of [WORKFLOW.md](WORKFLOW.md) into your project's `CLAUDE.md` 
                                    ├─ /gstack-to-gsd roadmap ─> .planning/ROADMAP.md
                                    │                            .planning/REQUIREMENTS.md
                                    │
-  *-eng-review-test-plan-*.md     ─┤
-  ceo-plans/*.md (arch decisions)  ├─ /gstack-to-gsd phase N ─> .planning/phases/{N}-{name}/{N}-RESEARCH.md
-  designs/*/                      ─┘                             .planning/phases/{N}-{name}/{N}-CONTEXT.md
+  *-eng-review-test-plan-*.md     ─┤                            .planning/phases/{N}-{name}/
+  ceo-plans/*.md (arch decisions)  ├─ /gstack-to-gsd phase N ─>   {N}-RESEARCH.md
+  designs/*/                      ─┘                               {N}-CONTEXT.md (UI only)
+                                                                   then: /gsd:plan-phase N
+                                                                     -> {N}-01-PLAN.md ...
 ```
+
+## Flags
+
+| Flag | Command | Effect |
+|------|---------|--------|
+| `--no-plan` | `phase N` | Bridge only, skip auto-triggering `/gsd:plan-phase` |
 
 ## Why this exists
 
-gstack produces excellent strategy documents (CEO/eng/design reviews) but has no execution engine. GSD has a powerful execution pipeline (plan -> execute -> verify) but starts from scratch on strategy. The bridge is the thinnest possible integration: it translates artifacts at the seam, then gets out of the way.
+gstack produces excellent strategy documents (CEO/eng/design reviews) but has no execution engine. GSD has a powerful execution pipeline (plan -> execute -> verify) but starts from scratch on strategy. The bridge translates artifacts at the seam and chains the planning step so you get from gstack reviews to executable GSD plans in one command.
 
 ## License
 

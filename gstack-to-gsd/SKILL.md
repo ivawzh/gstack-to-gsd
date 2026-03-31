@@ -6,7 +6,7 @@ user-invocable: true
 
 # /gstack-to-gsd — Bridge Gstack Reviews into GSD Plans
 
-Pure artifact translation. Reads gstack review outputs, writes GSD-format planning inputs. Does not execute any gstack or GSD commands.
+Bridge between gstack reviews and GSD execution. Translates artifacts and auto-triggers GSD planning when appropriate.
 
 ## Preamble (run first)
 
@@ -33,12 +33,13 @@ Read `~/.claude/skills/gstack-to-gsd-repo/gstack-to-gsd-upgrade/SKILL.md` (or fi
   OUT: .planning/ROADMAP.md                             (appended phases)
        .planning/REQUIREMENTS.md                        (appended requirements)
 
-/gstack-to-gsd phase N:
+/gstack-to-gsd phase N [--no-plan]:
   IN:  ~/.gstack/projects/{slug}/*-eng-review-*.md      (gstack eng review test plan)
        ~/.gstack/projects/{slug}/ceo-plans/*.md          (architecture decisions)
        gstack plan file design review sections           (if /plan-design-review ran)
   OUT: .planning/phases/{N}-{name}/{N}-RESEARCH.md       (architecture + test reqs)
        .planning/phases/{N}-{name}/{N}-CONTEXT.md        (design decisions, UI only)
+       then auto-triggers: /gsd:plan-phase N             (unless --no-plan flag)
 
 /gstack-to-gsd status:
   IN:  ~/.gstack/projects/{slug}/*                       (all gstack artifacts)
@@ -284,25 +285,30 @@ Write to `{phase_dir}/{N}-CONTEXT.md`:
 
 If NOT a UI phase: skip CONTEXT.md (GSD's discuss-phase will create it from codebase analysis).
 
-**Step 7: Report.**
+**Step 7: Report bridge results.**
 
 ```
-## /gstack-to-gsd phase {N} complete
+## /gstack-to-gsd phase {N} — bridge complete
 
 **Phase**: {N} - {Name}
 **Written**:
   - {phase_dir}/{N}-RESEARCH.md (from eng review + CEO plan)
   - {phase_dir}/{N}-CONTEXT.md (from design review) [if UI phase]
 
-### Content Summary
-- Architecture decisions: {count}
-- Test requirements: {count}
-- Edge cases: {count}
-- Design specs: {count} [if UI]
-
-### Next Steps
-- /gsd:plan-phase {N}    — create execution plans (reads RESEARCH.md + CONTEXT.md)
+Launching /gsd:plan-phase {N}...
 ```
+
+**Step 8: Auto-trigger GSD planning.**
+
+**If `--no-plan` flag is present in ARGUMENTS:** Skip. Report "Bridge complete. Run `/gsd:plan-phase {N}` when ready." and stop.
+
+**Otherwise:** Invoke GSD plan-phase immediately using the Skill tool:
+
+```
+Skill(skill="gsd:plan-phase", args="{N}")
+```
+
+This creates the full bridge-to-plan pipeline in one command: gstack artifacts are translated to RESEARCH.md/CONTEXT.md, then GSD's planner reads them and produces executable PLAN.md files.
 
 ---
 
@@ -361,11 +367,10 @@ For each phase in ROADMAP that came from a CEO plan:
 {Based on the state, recommend the single next action:}
 
 - If phases not in ROADMAP: "/gstack-to-gsd roadmap — add CEO plan phases"
-- If phase has no RESEARCH.md: "/gstack-to-gsd phase N — bridge eng review"
-- If phase has RESEARCH.md but no PLAN: "/gsd:plan-phase N — create execution plans"
-- If phase has PLAN but no SUMMARY: "/gsd:execute-phase N — execute plans"
+- If phase has no RESEARCH.md and no PLAN.md: "/gstack-to-gsd phase N — bridge + plan in one step"
+- If phase has PLAN.md but no SUMMARY.md: "/gsd:execute-phase N — execute plans"
+- If phase verified and all phases done: "/review then /ship"
 - If no eng review exists: "/plan-eng-review — run eng review first"
-- If all phases done: "/ship — create PR"
 ```
 
 ---
