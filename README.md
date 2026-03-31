@@ -11,10 +11,10 @@ Three commands. Translates gstack artifacts into GSD format and auto-triggers pl
 | Command | What it does |
 |---------|-------------|
 | `/gstack-to-gsd roadmap` | CEO plan -> ROADMAP.md phases + REQUIREMENTS.md |
-| `/gstack-to-gsd phase N` | Eng+design reviews -> RESEARCH.md, then auto-triggers `/gsd:plan-phase N` |
+| `/gstack-to-gsd phase N [M ...]` | Eng+design reviews -> RESEARCH.md, then auto-triggers `/gsd:plan-phase` per phase |
 | `/gstack-to-gsd status` | Shows unified state across both systems, recommends next action |
 
-`/gstack-to-gsd phase N` is the main command. One invocation bridges gstack artifacts AND creates GSD execution plans. Use `--no-plan` to bridge only without triggering planning.
+`/gstack-to-gsd phase N` is the main command. One invocation bridges gstack artifacts AND creates GSD execution plans. Accepts multiple phases: `phase 27 28 29` or ranges `phase 27-30`. Use `--no-plan` to bridge only.
 
 ## The workflow
 
@@ -82,6 +82,16 @@ Copy the contents of [WORKFLOW.md](WORKFLOW.md) into your project's `CLAUDE.md` 
 ```
 
 ## Flags
+
+## Usage examples
+
+```
+/gstack-to-gsd phase 27              # bridge + plan one phase
+/gstack-to-gsd phase 27 28 29        # bridge + plan three phases sequentially
+/gstack-to-gsd phase 27-30           # bridge + plan a range
+/gstack-to-gsd phase 27-29 33 35     # mix ranges and individual phases
+/gstack-to-gsd phase 28 --no-plan    # bridge only, skip planning
+```
 
 | Flag | Command | Effect |
 |------|---------|--------|

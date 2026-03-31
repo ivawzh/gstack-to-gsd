@@ -33,13 +33,15 @@ Read `~/.claude/skills/gstack-to-gsd-repo/gstack-to-gsd-upgrade/SKILL.md` (or fi
   OUT: .planning/ROADMAP.md                             (appended phases)
        .planning/REQUIREMENTS.md                        (appended requirements)
 
-/gstack-to-gsd phase N [--no-plan]:
+/gstack-to-gsd phase N [M ...] [--no-plan]:
   IN:  ~/.gstack/projects/{slug}/*-eng-review-*.md      (gstack eng review test plan)
        ~/.gstack/projects/{slug}/ceo-plans/*.md          (architecture decisions)
        gstack plan file design review sections           (if /plan-design-review ran)
-  OUT: .planning/phases/{N}-{name}/{N}-RESEARCH.md       (architecture + test reqs)
+  OUT: per phase:
+       .planning/phases/{N}-{name}/{N}-RESEARCH.md       (architecture + test reqs)
        .planning/phases/{N}-{name}/{N}-CONTEXT.md        (design decisions, UI only)
        then auto-triggers: /gsd:plan-phase N             (unless --no-plan flag)
+  Accepts: single (27), multiple (27 28 29), range (27-30), mix (27-29 33)
 
 /gstack-to-gsd status:
   IN:  ~/.gstack/projects/{slug}/*                       (all gstack artifacts)
@@ -161,9 +163,31 @@ Report:
 
 ---
 
-### `/gstack-to-gsd phase N`
+### `/gstack-to-gsd phase N [M ...] [--no-plan]`
 
-Converts gstack eng review and design review artifacts into GSD phase-level RESEARCH.md and CONTEXT.md.
+Bridges gstack review artifacts into GSD RESEARCH.md/CONTEXT.md for one or more phases, then auto-triggers `/gsd:plan-phase` for each.
+
+**Accepts multiple phases:**
+- Single: `/gstack-to-gsd phase 27`
+- Multiple: `/gstack-to-gsd phase 27 28 29`
+- Range: `/gstack-to-gsd phase 27-30`
+- Mix: `/gstack-to-gsd phase 27-29 33 35`
+
+**Parse ARGUMENTS** to extract all phase numbers. For ranges like `27-30`, expand to `27 28 29 30`. Collect into a list called `PHASES`. Remove `--no-plan` flag if present and set `NO_PLAN=true`.
+
+**For each phase in PHASES, sequentially:**
+
+Run Steps 1-8 below. After each phase completes (bridge + plan), report progress before moving to the next:
+```
+## Phase {N} of {total} complete
+Bridged: {N}-RESEARCH.md
+Planned: {plan_count} plan(s)
+Remaining: {remaining phases}
+```
+
+If any phase fails (missing artifacts, plan-phase error), report the failure and continue to the next phase. Do not stop the entire batch.
+
+**Steps 1-8 below apply per phase.**
 
 **Step 1: Resolve phase.**
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (2026-03-31)
+
+- `/gstack-to-gsd phase` now accepts multiple phases: `phase 27 28 29`, ranges `phase 27-30`, or mixed `phase 27-29 33`
+- Processes each phase sequentially: bridge RESEARCH.md, auto-trigger `/gsd:plan-phase`, report progress, next
+- Failures on one phase don't stop the batch
+
 ## 0.2.0 (2026-03-31)
 
 - `/gstack-to-gsd phase N` now auto-triggers `/gsd:plan-phase N` after bridging
